@@ -1,94 +1,158 @@
 #pragma once
+#include <algorithm>
+#include <cassert>
 #include <stdexcept>
 
 template<typename T = int64_t>
 class Fraction {
-    static_assert(std::is_integral_v<T>, "Number type must be an integral type");
+    static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "Numeric type must be signed and integral");
 
 public:
     Fraction() = default;
 
     template<typename U>
     Fraction(U n) : numerator_(n) {
-        static_assert(std::is_integral_v<U>, "Number type must be an integral type");
+        static_assert(std::is_integral_v<U> && std::is_signed_v<U>, "Numeric type must be signed and integral");
     }
 
     template<typename U>
-    Fraction(U num, U den) : numerator_(num), denominator_(den) {
-        static_assert(std::is_integral_v<U>, "Number type must be an integral type");
+    Fraction(U numerator, U denominator) : numerator_(numerator), denominator_(denominator) {
+        static_assert(std::is_integral_v<U> && std::is_signed_v<U>, "Numeric type must be signed and integral");
+        assert(denominator_ && "Fraction can't have a zero denominator");
         normalize();
+    }
+
+    Fraction& operator+=(const Fraction& rhs) {
+        assert(rhs.denominator_ && "Fraction can't have a zero denominator");
+        numerator_ = numerator_ * rhs.denominator_ + rhs.numerator_ * denominator_;
+        denominator_ *= rhs.denominator_;
+        normalize();
+        return *this;
+    }
+    friend Fraction operator+(const Fraction& lhs, const Fraction& rhs) {
+        Fraction res = lhs;
+        res += rhs;
+        return res;
+    }
+
+    Fraction& operator-=(const Fraction& rhs) {
+        assert(rhs.denominator_ && "Fraction can't have a zero denominator");
+        numerator_ = numerator_ * rhs.denominator_ - rhs.numerator_ * denominator_;
+        denominator_ *= rhs.denominator_;
+        normalize();
+        return *this;
+    }
+    friend Fraction operator-(const Fraction& lhs, const Fraction& rhs) {
+        Fraction res = lhs;
+        res -= rhs;
+        return res;
+    }
+
+    Fraction& operator*=(const Fraction& rhs) {
+        assert(rhs.denominator_ && "Fraction can't have a zero denominator");
+        numerator_ *= rhs.numerator_;
+        denominator_ *= rhs.denominator_;
+        normalize();
+        return *this;
+    }
+    friend Fraction operator*(const Fraction& lhs, const Fraction& rhs) {
+        Fraction res = lhs;
+        res *= rhs;
+        return res;
+    }
+
+    Fraction& operator/=(const Fraction& rhs) {
+        assert(rhs.numerator_ && "Division by zero!");
+        assert(rhs.denominator_ && "Fraction can't have a zero denominator");
+        numerator_ *= rhs.denominator_;
+        denominator_ *= rhs.numerator_;
+        normalize();
+        return *this;
+    }
+    friend Fraction operator/(const Fraction& lhs, const Fraction& rhs) {
+        Fraction res = lhs;
+        res /= rhs;
+        return res;
     }
 
     Fraction operator-() const { return {-numerator_, denominator_}; }
-    Fraction operator+(const Fraction& rhs) const {
-        return {numerator_ * rhs.denominator_ + rhs.numerator_ * denominator_, denominator_ * rhs.denominator_};
-    }
-    Fraction operator-(const Fraction& rhs) const {
-        return {numerator_ * rhs.denominator_ - rhs.numerator_ * denominator_, denominator_ * rhs.denominator_};
-    }
-    Fraction operator*(const Fraction& rhs) const {
-        return {numerator_ * rhs.numerator_, denominator_ * rhs.denominator_};
-    }
-    Fraction operator/(const Fraction& rhs) const {
-        if (rhs.numerator_ == 0) { throw std::runtime_error("Fraction division by 0!"); }
-        return {numerator_ * rhs.denominator_, denominator_ * rhs.numerator_};
-    }
-
-    void operator+=(const Fraction& rhs) {
-        (*this) = (*this) + rhs;
-        normalize();
-    }
-
-    void operator-=(const Fraction& rhs) {
-        (*this) = (*this) - rhs;
-        normalize();
-    }
-
-    void operator*=(const Fraction& rhs) {
-        (*this) = (*this) * rhs;
-        normalize();
-    }
-
-    void operator/=(const Fraction& rhs) {
-        (*this) = (*this) / rhs;
-        normalize();
-    }
 
     bool operator==(const Fraction& rhs) const { return ((*this) - rhs).numerator_ == 0; }
-    bool operator!=(const Fraction& rhs) const { return ((*this) - rhs).numerator_ != 0; }
     bool operator<(const Fraction& rhs) const { return ((*this) - rhs).numerator_ < 0; }
-    bool operator>(const Fraction& rhs) const { return ((*this) - rhs).numerator_ > 0; }
+    friend bool operator!=(const Fraction& lhs, const Fraction& rhs) { return !(lhs == rhs); }
+    friend bool operator>(const Fraction& lhs, const Fraction& rhs) { return rhs < lhs; }
+    friend bool operator<=(const Fraction& lhs, const Fraction& rhs) { return lhs < rhs || lhs == rhs; }
+    friend bool operator>=(const Fraction& lhs, const Fraction& rhs) { return rhs < lhs || lhs == rhs; }
 
-    template<class ostream>
-    friend ostream& operator<<(ostream& os, const Fraction& f) {
-        if (f.denominator_ == 1) { return os << f.numerator_; }
-        return os << "\\frac{" << f.numerator_ << "}{" << f.denominator_ << "}";
+    void pow(T power) { binpow(numerator_, denominator_, power); }
+    friend Fraction pow(const Fraction& rhs, T power) {
+        Fraction res = rhs;
+        res.pow(power);
+        return res;
     }
 
-    Fraction get_inv() { return {denominator_, numerator_}; }
+    friend std::ostream& operator<<(std::ostream& os, const Fraction& f) {
+        if (f.denominator_ == 1) { return os << f.numerator_; }
+        return os << std::string("\\frac{") << f.numerator_ << "}{" << f.denominator_ << "}";
+    }
 
-    friend Fraction inv(const Fraction& f) { return {f.den, f.num}; }
-    friend Fraction abs(const Fraction& f) { return f > 0 ? f : -f; }
+    void invert() {
+        assert(numerator_ != 0 && "Can't invert 0");
+        std::swap(numerator_, denominator_);
+        normalize();
+    }
+    friend Fraction invert(const Fraction& rhs) {
+        Fraction res = rhs;
+        res.invert();
+        return res;
+    }
 
 private:
-    T abs(T x) { return x < 0 ? -x : x; }
+    static int sign(T x) { return x < 0 ? -1 : x == 0 ? 0 : 1; }
 
-    T gcd(T x, T y) {
-        x = abs(x);
-        y = abs(y);
-        while (x > 0 && y > 0) {
-            x %= y;
-            std::swap(x, y);
+    static bool is_sum_overflow(T x, T y) {
+        if (sign(x) != sign(y) || sign(x) == 0) { return false; }
+        if (sign(x) == 1) { return y > std::numeric_limits<T>::max() - x; }
+        return y < std::numeric_limits<T>::min() - x;
+    }
+
+    static bool is_prod_overflow(T x, T y) {
+        if (x == 0 || y == 0) { return false; }
+        T res = x * y;
+        return res / x != y || res / y != x;
+    }
+
+    static void binpow(T& numerator, T& denominator, T pow) {
+        if (numerator == 0) { return; }
+        assert(denominator > 0);
+        T sign = numerator > 0 ? 1 : -1;
+        numerator *= sign;
+        if (pow < 0) {
+            std::swap(numerator, denominator);
+            pow *= -1;
         }
-        return x + y;
+        numerator = binpow(numerator, pow);
+        denominator = binpow(denominator, pow);
+        if ((pow & 1) && sign == -1) { numerator *= -1; }
+    }
+
+    static T binpow(T val, T pow) {
+        assert(pow >= 0 && "Negative power is not allowed!");
+        T res = 1;
+        for (T x = val; pow; pow >>= 1) {
+            if (pow & 1) { res *= x; }
+            x *= x;
+        }
+        return res;
     }
 
     void normalize() {
+        assert(denominator_ != 0);
         if (denominator_ < 0) {
             denominator_ *= -1;
             numerator_ *= -1;
         }
-        T gc = gcd(abs(numerator_), denominator_);
+        T gc = std::__gcd(abs(numerator_), denominator_);
         numerator_ /= gc;
         denominator_ /= gc;
     }

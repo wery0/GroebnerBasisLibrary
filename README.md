@@ -1,1 +1,3 @@
-"# GroebnerBasisLibrary" 
+# GroebnerBasisLibrary
+
+Groebner Basis Library project.
