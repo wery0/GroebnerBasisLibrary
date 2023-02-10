@@ -7,7 +7,7 @@ struct is_polynomial : std::false_type {};
 template<typename A, typename B, typename C, typename D, typename E>
 struct is_polynomial<Polynomial<A, B, C, D, E>> : std::true_type {};
 
-enum BasisType { Any, Groebner, ReducedGroebner, MinimalReducedGroebner };
+enum BasisType { Any, Groebner, MinimalGroebner, MinimalReducedGroebner };
 
 template<typename Polynom>
 class Ideal {
@@ -58,8 +58,8 @@ public:
         basis_type_ = BasisType::Groebner;
     }
 
-    void make_reduced_groebner_basis() {
-        if (basis_type_ == BasisType::ReducedGroebner || basis_type_ == BasisType::MinimalReducedGroebner) { return; }
+    void make_minimal_groebner_basis() {
+        if (basis_type_ == BasisType::MinimalGroebner || basis_type_ == BasisType::MinimalReducedGroebner) { return; }
         make_groebner_basis();
         for (int q = 0; q < store_.size(); q++) {
             for (int w = 0; w < store_.size(); w++) {
@@ -71,12 +71,12 @@ public:
                 }
             }
         }
-        basis_type_ = BasisType::ReducedGroebner;
+        basis_type_ = BasisType::MinimalGroebner;
     }
 
     void make_minimal_reduced_groebner_basis() {
         if (basis_type_ == BasisType::MinimalReducedGroebner) { return; }
-        make_reduced_groebner_basis();
+        make_minimal_groebner_basis();
         for (int q = 0; q < store_.size(); q++) {
             std::vector<Polynom> other = store_;
             other.erase(other.begin() + q);
