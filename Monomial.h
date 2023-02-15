@@ -10,8 +10,8 @@
 //Fraction examples: -\frac{-12}{-12}, \frac{0}{1}
 //Monomial should look like (Coefficient)?(Variable(^(\d)+)?)+
 //Monomial examples: x, -234x_123^999yz^5, x^4y^3z^2
-template<typename CoefficientType, typename DegreeType = int64_t, typename VariableNumberType = int32_t,
-         typename VariableOrder = VariableOrders::AsciiOrder>
+template<typename CoefficientType, typename VariableOrder = VariableOrders::AsciiOrder, typename DegreeType = int64_t,
+         typename VariableNumberType = int32_t>
 class Monomial {
     using Var = Variable<VariableNumberType, VariableOrder>;
 
