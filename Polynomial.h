@@ -5,14 +5,20 @@
 #include <set>
 #include <vector>
 
+template<typename>
+struct is_monomial : std::false_type {};
+
+template<typename A, typename B, typename C, typename D>
+struct is_monomial<Monomial<A, B, C, D>> : std::true_type {};
+
 //Polynomial - sum of monomials
-template<typename CoefficientType, typename MonomialOrder = MonomialOrders::Grlex,
-         typename VariableOrder = VariableOrders::AsciiOrder, typename DegreeType = int64_t,
-         typename VariableNumberType = int32_t>
+template<typename Monom,
+         typename MonomialOrder = MonomialOrders::Grlex>
 class Polynomial {
-    using Var = Variable<VariableNumberType, VariableOrder>;
-    using Monom = Monomial<CoefficientType, DegreeType, VariableNumberType, VariableOrder>;
-    using Polynom = Polynomial<CoefficientType, MonomialOrder, VariableOrder, DegreeType, VariableNumberType>;
+    static_assert(is_monomial<Monom>::value);
+    //using Var = Variable<VariableNumberType, VariableOrder>;
+    //using Monom = Monomial<CoefficientType, DegreeType, VariableNumberType, VariableOrder>;
+    using Polynom = Polynomial<Monom, MonomialOrder>;
 
 public:
     Polynomial() = default;
@@ -59,19 +65,19 @@ public:
         return res;
     }
 
-    Polynomial& operator*=(const CoefficientType& rhs) {
+    Polynomial& operator*=(const auto& rhs) {
         std::set<Monom, MonomialOrder> new_monom_store;
         for (const auto& monomial : monom_store_) { new_monom_store.insert(monomial * rhs); }
         monom_store_ = std::move(new_monom_store);
         remove_zero_monomials();
         return *this;
     }
-    friend Polynomial operator*(const Polynomial& lhs, const CoefficientType& rhs) {
+    friend Polynomial operator*(const Polynomial& lhs, const auto& rhs) {
         Polynomial res = lhs;
         res *= rhs;
         return res;
     }
-    friend Polynomial operator*(const CoefficientType& lhs, const Polynomial& rhs) {
+    friend Polynomial operator*(const auto& lhs, const Polynomial& rhs) {
         Polynomial res = rhs;
         res *= lhs;
         return res;
@@ -110,8 +116,8 @@ public:
         return res;
     }
 
-    Polynomial& operator/=(const CoefficientType& rhs) { return (*this) *= invert(rhs); }
-    friend Polynomial operator/(const Polynomial& lhs, const CoefficientType& rhs) {
+    Polynomial& operator/=(const auto& rhs) { return (*this) *= invert(rhs); }
+    friend Polynomial operator/(const Polynomial& lhs, const auto& rhs) {
         Polynomial res = lhs;
         res /= rhs;
         return res;
@@ -133,38 +139,23 @@ public:
 
     bool is_zero() const { return monom_store_.empty(); }
 
-    //Unstated variables have default value 1, i. e. not affect the result.
-    CoefficientType eval(std::map<Var, CoefficientType> variable_values) const {
-        CoefficientType res = 0;
-        for (const auto& monomial : monom_store_) {
-            CoefficientType cur = monomial.get_coefficient();
-            for (const auto& [var, deg] : monomial.get_variables()) {
-                if (!variable_values.count(var)) { continue; }
-                CoefficientType tyt = pow(variable_values[var], deg);
-                cur = cur * tyt;
-            }
-            res += cur;
-        }
-        return res;
-    }
-
-    DegreeType get_degree() const {
-        DegreeType ans = 0;
+    auto get_degree() const {
+        auto ans = 0;
         for (const auto& monomial : monom_store_) { ans = max(ans, degree(monomial)); }
         return ans;
     }
 
     Monom get_highest_monomial() const { return *monom_store_.rbegin(); }
 
-    Monom get_highest_monomial_divisible_on(const Monom& m) const {
+    Monom get_highest_monomial_divisible_by(const Monom& m) const {
         for (auto it = monom_store_.rbegin(); it != monom_store_.rend(); ++it) {
             if (it->is_divisible_on(m)) { return *it; }
         }
         return Monom();
     }
 
-    bool do_elementary_reduction_over(Polynom& p) const {
-        Monom m = p.get_highest_monomial_divisible_on(get_highest_monomial());
+    bool do_one_elementary_reduction_over(Polynom& p) const {
+        Monom m = p.get_highest_monomial_divisible_by(get_highest_monomial());
         if (m.is_zero()) { return false; }
         p -= m / get_highest_monomial() * (*this);
         return true;
