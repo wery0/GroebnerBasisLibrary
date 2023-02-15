@@ -4,8 +4,8 @@
 template<typename>
 struct is_polynomial : std::false_type {};
 
-template<typename A, typename B, typename C, typename D, typename E>
-struct is_polynomial<Polynomial<A, B, C, D, E>> : std::true_type {};
+template<typename A, typename B>
+struct is_polynomial<Polynomial<A, B>> : std::true_type {};
 
 enum BasisType { Any, Groebner, MinimalGroebner, MinimalReducedGroebner };
 
@@ -33,7 +33,7 @@ public:
     void reduce(Polynom& rhs) const {
         for (;;) {
             bool was_reduced = false;
-            for (const Polynom& p : store_) { was_reduced |= p.do_elementary_reduction_over(rhs); }
+            for (const Polynom& p : store_) { was_reduced |= p.do_one_elementary_reduction_over(rhs); }
             if (!was_reduced) { break; }
         }
     }
@@ -99,10 +99,10 @@ public:
         store_.clear();
     }
 
-    void print() {
-        std::cout << "{\n";
-        for (const auto& p : store_) { std::cout << '\t' << p << '\n'; }
-        std::cout << "}\n";
+    friend std::ostream& operator<<(std::ostream& os, const Ideal& i) {
+        os << "{\n";
+        for (const auto& p : i.store_) {os << '\t' << p << '\n'; }
+        return os << "}\n";
     }
 
 private:
