@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.23)
+project(GroebnerBasisLibrary)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+add_executable(TestMonomialOrder Tests/MonomialOrdersTest.cpp)
+add_executable(BenchModulo Benchmarks/ModuloBench.cpp)
+add_executable(BenchInverse Benchmarks/InverseBench.cpp)
+add_executable(FractionTest Tests/FractionTest.cpp)
+add_executable(MintTest Tests/MintTest.cpp)
+add_executable(MonomialTest Tests/MonomialTest.cpp)
+add_executable(PolynomialTest Tests/PolynomialTest.cpp)
+add_executable(IdealTest Tests/IdealTest.cpp)
+add_executable(Killer Tests/Killer.cpp)
