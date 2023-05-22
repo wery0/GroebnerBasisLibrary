@@ -1,5 +1,6 @@
 #pragma once
 #include <algorithm>
+#include <numeric>
 #include <cassert>
 #include <stdexcept>
 
@@ -11,7 +12,7 @@ public:
     Fraction() = default;
 
     template<typename U>
-    Fraction(U n) : numerator_(n) {
+    Fraction(U value) : numerator_(value) {
         static_assert(std::is_integral_v<U> && std::is_signed_v<U>, "Numeric type must be signed and integral");
     }
 
@@ -23,7 +24,7 @@ public:
     }
 
     Fraction& operator+=(const Fraction& rhs) {
-        assert(rhs.denominator_ && "Fraction can't have a zero denominator");
+        assert(denominator_ && rhs.denominator_ && "Fraction can't have a zero denominator");
         numerator_ = numerator_ * rhs.denominator_ + rhs.numerator_ * denominator_;
         denominator_ *= rhs.denominator_;
         normalize();
@@ -36,7 +37,7 @@ public:
     }
 
     Fraction& operator-=(const Fraction& rhs) {
-        assert(rhs.denominator_ && "Fraction can't have a zero denominator");
+        assert(denominator_ && rhs.denominator_ && "Fraction can't have a zero denominator");
         numerator_ = numerator_ * rhs.denominator_ - rhs.numerator_ * denominator_;
         denominator_ *= rhs.denominator_;
         normalize();
@@ -49,7 +50,7 @@ public:
     }
 
     Fraction& operator*=(const Fraction& rhs) {
-        assert(rhs.denominator_ && "Fraction can't have a zero denominator");
+        assert(denominator_ && rhs.denominator_ && "Fraction can't have a zero denominator");
         numerator_ *= rhs.numerator_;
         denominator_ *= rhs.denominator_;
         normalize();
@@ -63,7 +64,7 @@ public:
 
     Fraction& operator/=(const Fraction& rhs) {
         assert(rhs.numerator_ && "Division by zero!");
-        assert(rhs.denominator_ && "Fraction can't have a zero denominator");
+        assert(denominator_ && rhs.denominator_ && "Fraction can't have a zero denominator");
         numerator_ *= rhs.denominator_;
         denominator_ *= rhs.numerator_;
         normalize();
@@ -77,14 +78,26 @@ public:
 
     Fraction operator-() const { return {-numerator_, denominator_}; }
 
-    bool operator==(const Fraction& rhs) const { return ((*this) - rhs).numerator_ == 0; }
-    bool operator<(const Fraction& rhs) const { return ((*this) - rhs).numerator_ < 0; }
+    bool operator==(const Fraction& rhs) const { return numerator_ == rhs.numerator_ && denominator_ == rhs.denominator_; }
     friend bool operator!=(const Fraction& lhs, const Fraction& rhs) { return !(lhs == rhs); }
+    bool operator<(const Fraction& rhs) const { return numerator_ * rhs.denominator_ < rhs.numerator_ * denominator_; }
     friend bool operator>(const Fraction& lhs, const Fraction& rhs) { return rhs < lhs; }
-    friend bool operator<=(const Fraction& lhs, const Fraction& rhs) { return lhs < rhs || lhs == rhs; }
-    friend bool operator>=(const Fraction& lhs, const Fraction& rhs) { return rhs < lhs || lhs == rhs; }
+    friend bool operator<=(const Fraction& lhs, const Fraction& rhs) { return !(rhs < lhs); }
+    friend bool operator>=(const Fraction& lhs, const Fraction& rhs) { return !(lhs < rhs); }
 
-    void pow(T power) { binpow(numerator_, denominator_, power); }
+    void pow(T power) {
+        if (numerator_ == 0) { return; }
+        assert(denominator_ > 0);
+        T sign = numerator_ > 0 ? 1 : -1;
+        numerator_ *= sign;
+        if (power < 0) {
+            std::swap(numerator_, denominator_);
+            power *= -1;
+        }
+        numerator_ = binpow(numerator_, power);
+        denominator_ = binpow(denominator_, power);
+        if ((power & 1) && sign == -1) { numerator_ *= -1; }
+    }
     friend Fraction pow(const Fraction& rhs, T power) {
         Fraction res = rhs;
         res.pow(power);
@@ -99,7 +112,6 @@ public:
     void invert() {
         assert(numerator_ != 0 && "Can't invert 0");
         std::swap(numerator_, denominator_);
-        normalize();
     }
     friend Fraction invert(const Fraction& rhs) {
         Fraction res = rhs;
@@ -108,7 +120,7 @@ public:
     }
 
 private:
-    static int sign(T x) { return x < 0 ? -1 : x == 0 ? 0 : 1; }
+    static T sign(T x) { return x < 0 ? -1 : x == 0 ? 0 : 1; }
 
     static bool is_sum_overflow(T x, T y) {
         if (sign(x) != sign(y) || sign(x) == 0) { return false; }
@@ -120,20 +132,6 @@ private:
         if (x == 0 || y == 0) { return false; }
         T res = x * y;
         return res / x != y || res / y != x;
-    }
-
-    static void binpow(T& numerator, T& denominator, T pow) {
-        if (numerator == 0) { return; }
-        assert(denominator > 0);
-        T sign = numerator > 0 ? 1 : -1;
-        numerator *= sign;
-        if (pow < 0) {
-            std::swap(numerator, denominator);
-            pow *= -1;
-        }
-        numerator = binpow(numerator, pow);
-        denominator = binpow(denominator, pow);
-        if ((pow & 1) && sign == -1) { numerator *= -1; }
     }
 
     static T binpow(T val, T pow) {
@@ -152,9 +150,9 @@ private:
             denominator_ *= -1;
             numerator_ *= -1;
         }
-        T gc = std::__gcd(abs(numerator_), denominator_);
-        numerator_ /= gc;
-        denominator_ /= gc;
+        T gcd = std::gcd(numerator_, denominator_);
+        numerator_ /= gcd;
+        denominator_ /= gcd;
     }
 
     T numerator_ = 0;

@@ -1,15 +1,16 @@
 #pragma once
+#include "../Orders/VariableOrders.h"
 #include <cassert>
 #include <cctype>
 #include <cstdint>
 #include <tuple>
-#include "VariableOrders.h"
 
 //Variable should look like [A-Za-z](_(\d)+)?
 //Examples: a, Y, x_0, P_314159
 template<typename NumberType = int32_t, typename VariableOrder = VariableOrders::AsciiOrder>
 class Variable {
     static constexpr NumberType kNoIndex = -1;
+
 public:
     Variable() = default;
 
@@ -22,12 +23,12 @@ public:
 
     bool operator<(const Variable& rhs) const {
         static VariableOrder var_order;
-        if(letter_ != rhs.letter_) {return var_order(letter_, rhs.letter_);}
+        if (letter_ != rhs.letter_) { return var_order(letter_, rhs.letter_); }
         return number_ > rhs.number_;
     }
 
     friend std::ostream& operator<<(std::ostream& os, const Variable& v) {
-        if (v.number_ == -1) { return os << v.letter_; }
+        if (v.number_ == kNoIndex) { return os << v.letter_; }
         return os << v.letter_ << '_' << '{' << v.number_ << '}';
     }
 

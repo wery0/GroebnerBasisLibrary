@@ -1,4 +1,5 @@
 #pragma once
+#include <cassert>
 #include <limits>
 #include <ostream>
 #include <type_traits>
@@ -13,8 +14,8 @@ public:
     Mint() = default;
 
     template<typename U>
-    Mint(U c) : value_(reduce(c)) {
-        static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "Numeric type must be signed and integral");
+    Mint(U value) : value_(reduce(value)) {
+        static_assert(std::is_integral_v<U> && std::is_signed_v<U>, "Numeric type must be signed and integral");
     }
 
     Mint& operator+=(const Mint& rhs) {
@@ -65,11 +66,11 @@ public:
     Mint operator-() const { return value_ ? MOD - value_ : 0; }
 
     bool operator==(const Mint& rhs) const { return value_ == rhs.value_; }
-    bool operator<(const Mint& rhs) const { return value_ < rhs.value_; }
     friend bool operator!=(const Mint& lhs, const Mint& rhs) { return !(lhs == rhs); }
+    bool operator<(const Mint& rhs) const { return value_ < rhs.value_; }
     friend bool operator>(const Mint& lhs, const Mint& rhs) { return rhs < lhs; }
-    friend bool operator<=(const Mint& lhs, const Mint& rhs) { return lhs < rhs || lhs == rhs; }
-    friend bool operator>=(const Mint& lhs, const Mint& rhs) { return rhs < lhs || lhs == rhs; }
+    friend bool operator<=(const Mint& lhs, const Mint& rhs) { return !(rhs < lhs); }
+    friend bool operator>=(const Mint& lhs, const Mint& rhs) { return !(lhs < rhs); }
 
     void pow(T power) { value_ = binpow(value_, power); }
     friend Mint pow(const Mint& rhs, T power) {
@@ -88,9 +89,7 @@ public:
         return res;
     }
 
-    friend std::ostream& operator<<(std::ostream& out, const Mint& rhs) {
-        return out << rhs.value_;
-    }
+    friend std::ostream& operator<<(std::ostream& out, const Mint& rhs) { return out << rhs.value_; }
 
 private:
     static T binpow(T val, T pow) {
