@@ -72,6 +72,21 @@ public:
         return res;
     }
 
+    Monomial& operator*=(const Var& rhs) {
+        ++var_store_[rhs];
+        return *this;
+    }
+    friend Monomial operator*(const Monomial& lhs, const Var& rhs) {
+        Monomial res = lhs;
+        res *= rhs;
+        return res;
+    }
+    friend Monomial operator*(const Var& lhs, const Monomial& rhs) {
+        Monomial res = rhs;
+        res *= lhs;
+        return res;
+    }
+
     Monomial& operator*=(const CoefficientType& rhs) {
         coefficient_ *= rhs;
         if (coefficient_ == 0) { var_store_.clear(); }
@@ -198,7 +213,7 @@ public:
             const auto& [var, deg] = *it;
             assert(deg > 0);
             os << var;
-            if (deg > 1) { os << "^{" << deg << "}"; }
+            if (deg > 1) { os << "^" << deg; }
         }
         return os;
     }
