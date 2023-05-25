@@ -1,7 +1,7 @@
 #pragma once
 #include <algorithm>
-#include <numeric>
 #include <cassert>
+#include <numeric>
 #include <stdexcept>
 
 template<typename T = int64_t>
@@ -78,7 +78,9 @@ public:
 
     Fraction operator-() const { return {-numerator_, denominator_}; }
 
-    bool operator==(const Fraction& rhs) const { return numerator_ == rhs.numerator_ && denominator_ == rhs.denominator_; }
+    bool operator==(const Fraction& rhs) const {
+        return numerator_ == rhs.numerator_ && denominator_ == rhs.denominator_;
+    }
     friend bool operator!=(const Fraction& lhs, const Fraction& rhs) { return !(lhs == rhs); }
     bool operator<(const Fraction& rhs) const { return numerator_ * rhs.denominator_ < rhs.numerator_ * denominator_; }
     friend bool operator>(const Fraction& lhs, const Fraction& rhs) { return rhs < lhs; }

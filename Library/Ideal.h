@@ -113,6 +113,8 @@ public:
         return true;
     }
 
+    size_t size() const { return store_.size(); }
+
     void clear() {
         basis_type_ = BasisType::Any;
         store_.clear();

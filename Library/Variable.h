@@ -29,7 +29,7 @@ public:
 
     friend std::ostream& operator<<(std::ostream& os, const Variable& v) {
         if (v.number_ == kNoIndex) { return os << v.letter_; }
-        return os << v.letter_ << '_' << '{' << v.number_ << '}';
+        return os << v.letter_ << "_" << v.number_;
     }
 
 private:
