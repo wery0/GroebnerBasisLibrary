@@ -5,7 +5,7 @@ int main() {
     {
         using F = Fraction<int64_t>;
         using VI = Variable<int32_t, VariableOrders::InverseAsciiOrder>;
-        using MF = Monomial<Fraction<int64_t>, VariableOrders::InverseAsciiOrder>;
+        using MF = Monomial<F, VariableOrders::InverseAsciiOrder>;
         MF m1("16xyz^45"), m2("7xyz^1");
         assert(m1.is_divisible_on(m2));
         assert(m1 / m2 == MF(F(16, 7), VI('z'), 44));
@@ -44,6 +44,7 @@ int main() {
     }
     {
         using M = Mint<int64_t, 7>;
+        using V = Variable<int32_t, VariableOrders::InverseAsciiOrder>;
         using MM = Monomial<M, VariableOrders::InverseAsciiOrder>;
         MM m1("-1a_234234"), m2 = -m1;
         assert(m1 == MM("6a_234234"));
@@ -57,6 +58,10 @@ int main() {
         assert(gcd(m1, m2) * lcm(m1, m2) == m1 * m2);
         m1 /= m2;
         assert(m1 == MM("xz"));
+        m1 *= V('g', 15);
+        assert(m1 == MM("g_15xz"));
+        m1 = V('A', -1) * m1 * V('B', 0);
+        assert(m1 == MM("AB_0g_15xz"));
     }
     cout << "OK";
 }

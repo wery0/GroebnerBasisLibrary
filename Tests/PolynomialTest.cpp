@@ -13,7 +13,7 @@ namespace {
 
 int main() {
     using F = Fraction<int64_t>;
-    using MF = Monomial<Fraction<int64_t>, VariableOrders::InverseAsciiOrder>;
+    using MF = Monomial<F, VariableOrders::InverseAsciiOrder>;
     using PMF = Polynomial<MF>;
     PMF p1("abc + bca");
     check(p1, "2abc");

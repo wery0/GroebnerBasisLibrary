@@ -3,7 +3,7 @@
 using namespace std;
 
 using F = Fraction<int64_t>;
-using MF = Monomial<Fraction<int64_t>, VariableOrders::InverseAsciiOrder>;
+using MF = Monomial<F, VariableOrders::InverseAsciiOrder>;
 using PMFL = Polynomial<MF, MonomialOrders::Lex>;
 using PMFG = Polynomial<MF, MonomialOrders::Grlex>;
 using PMFR = Polynomial<MF, MonomialOrders::Grevlex>;
